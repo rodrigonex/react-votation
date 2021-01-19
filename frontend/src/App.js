@@ -1,58 +1,53 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
+
 import Candidates from "./components/Candidates";
 import Header from "./components/Header";
 import Spinner from "./components/Spinner";
 
-export default class App extends Component {
-  constructor() {
-    super();
-
-    this.state = {
-      candidates: [],
-      previousVotes: [],
-      previousPorcentage: [],
-    };
-
-    this.interval = null;
-  }
-
-  componentDidMount() {
-    this.interval = setInterval(() => {
+export default function App() {
+  const [candidates, SetCandidates] = useState([]);
+  const [previousVotes, SetPreviousVotes] = useState([]);
+  const [previousPorcentage, SetPreviousPorcentage] = useState([]);
+  useEffect(() => {
+    const interval = setInterval(() => {
       fetch("http://localhost:8080/votes")
         .then((res) => {
           return res.json();
         })
         .then((json) => {
-          const previousVotes = this.state.candidates.map(({ id, votes }) => {
+          const LocalPreviousVotes = candidates.map(({ id, votes }) => {
             return { id, votes };
           });
 
-          const previousPorcentage = this.state.candidates.map(({ id, percentage }) => {
-            return { id, percentage };
-          });
+          const LocalPreviousPorcentage = candidates.map(
+            ({ id, percentage }) => {
+              return { id, percentage };
+            }
+          );
 
-          this.setState({
-            candidates: json.candidates,
-            previousVotes,
-            previousPorcentage,
-          });
+          SetCandidates(json.candidates);
+          SetPreviousVotes(LocalPreviousVotes);
+          SetPreviousPorcentage(LocalPreviousPorcentage);
         });
     }, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [candidates]);
+
+  if (candidates.length === 0) {
+    return <Spinner description="Carregando.." />;
   }
 
-  render() {
-            
-            const { candidates, previousVotes, previousPorcentage } = this.state;
-
-    if (candidates.length === 0) {
-      return <Spinner description="Carregando.." />;
-    }
-
-    return (
-      <div>
-        <Header title="Votação" />
-        <Candidates previousPorcentage={previousPorcentage}  previousVotes={previousVotes} candidates={candidates} />
-      </div>
-    );
-  }
+  return (
+    <div>
+      <Header title="Votação" />
+      <Candidates
+        previousPorcentage={previousPorcentage}
+        previousVotes={previousVotes}
+        candidates={candidates}
+      />
+    </div>
+  );
 }
